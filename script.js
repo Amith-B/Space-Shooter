@@ -21,8 +21,8 @@ const keyPressStates = {
 };
 
 class Ship {
+  static shipSize = 40;
   constructor(ctx, x, y) {
-    this.shipSize = 40;
     this.ctx = ctx;
     this.x = x;
     this.y = y;
@@ -56,7 +56,7 @@ class Ship {
     }
 
     const { x, y } = getNextCoordinatesWithAngle(
-      this.shipSize / 2,
+      Ship.shipSize / 2,
       this.movementAngle,
       this.speed
     );
@@ -65,10 +65,10 @@ class Ship {
 
     this.drawImageRot(
       img,
-      this.x - this.shipSize / 2,
-      this.y - this.shipSize / 2,
-      this.shipSize,
-      this.shipSize,
+      this.x - Ship.shipSize / 2,
+      this.y - Ship.shipSize / 2,
+      Ship.shipSize,
+      Ship.shipSize,
       this.shipAngle
     );
   }
@@ -83,6 +83,26 @@ class Ship {
     this.ctx.drawImage(img, (width / 2) * -1, (height / 2) * -1, width, height);
 
     this.ctx.restore();
+  }
+}
+
+class Bullet {
+  static radius = 2;
+  constructor(ctx, x, y, velocityX, velocityY) {
+    this.x = x;
+    this.y = y;
+    this.vx = velocityX;
+    this.vy = velocityY;
+    this.ctx = ctx;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.ctx.beginPath();
+    this.ctx.arc(this.x, this.y, Bullet.radius, 0, 2 * Math.PI, false);
+    this.ctx.fillStyle = "#ff0000";
+    this.ctx.fill();
   }
 }
 
@@ -110,6 +130,7 @@ window.addEventListener("keyup", (event) => {
   updateKeyState(event, false);
 });
 
+const bullets = [];
 function updateKeyState(event, enable) {
   switch (event.key) {
     case "ArrowUp":
@@ -121,6 +142,16 @@ function updateKeyState(event, enable) {
     case "ArrowRight":
       ship.angleInc = enable ? 4 : 0;
       break;
+    case " ":
+      if (enable) {
+        const { x, y } = getNextCoordinatesWithAngle(
+          Bullet.radius,
+          ship.shipAngle,
+          ship.speed + 2
+        );
+        bullets.push(new Bullet(ctx, ship.x, ship.y, x, y));
+      }
+      break;
   }
 }
 
@@ -128,6 +159,19 @@ function refreshScreen() {
   ctx.fillStyle = "rgba(0,0,0,0.2)";
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   ship.update();
+  for (let i = 0; i < bullets.length; i++) {
+    bullets[i].update();
+    if (
+      bullets[i].x < 0 ||
+      bullets[i].x > window.innerWidth ||
+      bullets[i].y < 0 ||
+      bullets[i].y > window.innerHeight
+    ) {
+      bullets.splice(i, 1);
+      i--;
+    }
+  }
+
   requestAnimationFrame(refreshScreen);
 }
 
