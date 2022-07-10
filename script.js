@@ -1,18 +1,30 @@
-const img = new Image();
-img.src = "./assets/ship.png";
+const shipImg = new Image();
+shipImg.src = "./assets/ship.png";
 
-const shipSize = 60;
+const astImg = new Image();
+astImg.src = "./assets/asteroid.png";
 
 const canvas = document.getElementById("game-canvas");
 /** @type {CanvasRenderingContext2D} */
 const ctx = canvas.getContext("2d");
 
 let ship;
-img.onload = () => {
+shipImg.onload = () => {
   setCanvasSize();
   ship = new Ship(ctx, canvas.width / 2, canvas.height / 2);
   refreshScreen();
 };
+
+let asteroids = [];
+astImg.onload = () => {
+  addAsteroids(10);
+};
+
+function addAsteroids(count) {
+  Array.from(Array(count).keys()).forEach(() => {
+    asteroids.push(new Asteroid(ctx));
+  });
+}
 
 const keyPressStates = {
   up: false,
@@ -21,8 +33,52 @@ const keyPressStates = {
   shoot: false,
 };
 
+class Asteroid {
+  constructor(ctx) {
+    this.ctx = ctx;
+    if (Math.random() > 0.5) {
+      this.x = Math.random() > 0.5 ? window.innerWidth : 0;
+      this.y = Math.round(Math.random() * window.innerHeight);
+    } else {
+      this.x = Math.round(Math.random() * window.innerWidth);
+      this.y = Math.random() > 0.5 ? window.innerHeight : 0;
+    }
+
+    const angle = Math.atan2(ship.y - this.y, ship.x - this.x);
+
+    this.size = Math.round(Math.random() * 60 + 30);
+    this.speed = Math.random() + 0.1;
+    this.asteroidAngle = 0;
+    this.angleInc = (Math.random() + 1) * (Math.random() > 0.5 ? -1 : 1);
+
+    this.velocity = {
+      x: Math.cos(angle) * this.speed,
+      y: Math.sin(angle) * this.speed,
+    };
+    this.imagePositionX = Math.round(Math.random() * 3) * 125;
+    this.imagePositionY = Math.round(Math.random() * 3) * 125;
+  }
+
+  update() {
+    this.asteroidAngle += this.angleInc;
+
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
+
+    drawImageRot(
+      this.ctx,
+      astImg,
+      this.x - this.size / 2,
+      this.y - this.size / 2,
+      this.size,
+      this.size,
+      this.asteroidAngle
+    );
+  }
+}
+
 class Ship {
-  static shipSize = 40;
+  static size = 40;
   constructor(ctx, x, y) {
     this.ctx = ctx;
     this.x = x;
@@ -57,31 +113,38 @@ class Ship {
     }
 
     const { x, y } = getNextCoordinatesWithAngle(
-      Ship.shipSize / 2,
+      Ship.size / 2,
       this.movementAngle,
       this.speed
     );
     this.x += x;
     this.y += y;
 
-    this.drawImageRot(
-      img,
-      this.x - Ship.shipSize / 2,
-      this.y - Ship.shipSize / 2,
-      Ship.shipSize,
-      Ship.shipSize,
+    drawImageRot(
+      this.ctx,
+      shipImg,
+      this.x - Ship.size / 2,
+      this.y - Ship.size / 2,
+      Ship.size,
+      Ship.size,
       this.shipAngle
     );
   }
 
-  drawImageRot(img, x, y, width, height, deg) {
+  drawImageRot(shipImg, x, y, width, height, deg) {
     this.ctx.save();
 
     const rad = (deg * Math.PI) / 180;
 
     this.ctx.translate(x + width / 2, y + height / 2);
     this.ctx.rotate(rad);
-    this.ctx.drawImage(img, (width / 2) * -1, (height / 2) * -1, width, height);
+    this.ctx.drawImage(
+      shipImg,
+      (width / 2) * -1,
+      (height / 2) * -1,
+      width,
+      height
+    );
 
     this.ctx.restore();
   }
@@ -102,10 +165,24 @@ class Bullet {
     this.y += this.vy;
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, Bullet.radius, 0, 2 * Math.PI, false);
-    this.ctx.fillStyle = "#ff0000";
+    this.ctx.fillStyle = "#34a9de";
     this.ctx.fill();
   }
 }
+
+function drawImageRot(ctx, img, x, y, width, height, deg) {
+  ctx.save();
+
+  const rad = (deg * Math.PI) / 180;
+
+  ctx.translate(x + width / 2, y + height / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(img, (width / 2) * -1, (height / 2) * -1, width, height);
+
+  ctx.restore();
+}
+
+ctx.drawImage;
 
 function getNextCoordinatesWithAngle(radius, degree, velocity = 1) {
   let deg = 0;
@@ -157,7 +234,10 @@ function updateKeyState(event, enable) {
   }
 }
 
+let animationId;
 function refreshScreen() {
+  animationId = requestAnimationFrame(refreshScreen);
+
   ctx.fillStyle = "rgba(0,0,0,0.2)";
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   ship.update();
@@ -174,7 +254,28 @@ function refreshScreen() {
     }
   }
 
-  requestAnimationFrame(refreshScreen);
+  let removedAsteroids = 0;
+  for (let i = 0; i < asteroids.length; i++) {
+    asteroids[i].update();
+
+    const dist = Math.hypot(ship.x - asteroids[i].x, ship.y - asteroids[i].y);
+
+    if (dist - Ship.size / 2 - asteroids[i].size / 2 < -10) {
+      cancelAnimationFrame(animationId);
+    }
+    if (
+      asteroids[i].x + asteroids[i].size / 2 < 0 ||
+      asteroids[i].x - asteroids[i].size / 2 > window.innerWidth ||
+      asteroids[i].y + asteroids[i].size / 2 < 0 ||
+      asteroids[i].y - asteroids[i].size / 2 > window.innerHeight
+    ) {
+      asteroids.splice(i, 1);
+      removedAsteroids += 1;
+      i--;
+    }
+  }
+
+  addAsteroids(removedAsteroids);
 }
 
 function setCanvasSize() {
