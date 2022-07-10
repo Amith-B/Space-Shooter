@@ -17,13 +17,13 @@ shipImg.onload = () => {
 
 let asteroids = [];
 astImg.onload = () => {
-  addAsteroids(10);
+  startAsteroids();
 };
 
-function addAsteroids(count) {
-  Array.from(Array(count).keys()).forEach(() => {
+function startAsteroids() {
+  setInterval(() => {
     asteroids.push(new Asteroid(ctx));
-  });
+  }, 2000);
 }
 
 const keyPressStates = {
@@ -47,13 +47,12 @@ class Asteroid {
     const angle = Math.atan2(ship.y - this.y, ship.x - this.x);
 
     this.size = Math.round(Math.random() * 60 + 30);
-    this.speed = Math.random() + 0.1;
     this.asteroidAngle = 0;
     this.angleInc = (Math.random() + 1) * (Math.random() > 0.5 ? -1 : 1);
 
     this.velocity = {
-      x: Math.cos(angle) * this.speed,
-      y: Math.sin(angle) * this.speed,
+      x: Math.cos(angle),
+      y: Math.sin(angle),
     };
     this.imagePositionX = Math.round(Math.random() * 3) * 125;
     this.imagePositionY = Math.round(Math.random() * 3) * 125;
@@ -241,8 +240,10 @@ function refreshScreen() {
   ctx.fillStyle = "rgba(0,0,0,0.2)";
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   ship.update();
+
   for (let i = 0; i < bullets.length; i++) {
     bullets[i].update();
+
     if (
       bullets[i].x < 0 ||
       bullets[i].x > window.innerWidth ||
@@ -252,15 +253,32 @@ function refreshScreen() {
       bullets.splice(i, 1);
       i--;
     }
+
+    if (bullets[i]) {
+      for (let ai = 0; ai < asteroids.length; ai++) {
+        if (bullets[i] && asteroids[ai]) {
+          const dist = Math.hypot(
+            bullets[i].x - asteroids[ai].x,
+            bullets[i].y - asteroids[ai].y
+          );
+
+          if (dist - Bullet.radius - asteroids[ai].size / 2 < 1) {
+            asteroids.splice(ai, 1);
+            bullets.splice(i, 1);
+            ai--;
+            i--;
+          }
+        }
+      }
+    }
   }
 
-  let removedAsteroids = 0;
   for (let i = 0; i < asteroids.length; i++) {
     asteroids[i].update();
 
     const dist = Math.hypot(ship.x - asteroids[i].x, ship.y - asteroids[i].y);
 
-    if (dist - Ship.size / 2 - asteroids[i].size / 2 < -10) {
+    if (dist - Ship.size / 2 - asteroids[i].size / 2 < 1) {
       cancelAnimationFrame(animationId);
     }
     if (
@@ -270,12 +288,9 @@ function refreshScreen() {
       asteroids[i].y - asteroids[i].size / 2 > window.innerHeight
     ) {
       asteroids.splice(i, 1);
-      removedAsteroids += 1;
       i--;
     }
   }
-
-  addAsteroids(removedAsteroids);
 }
 
 function setCanvasSize() {
