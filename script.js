@@ -18,6 +18,7 @@ const keyPressStates = {
   up: false,
   left: false,
   right: false,
+  shoot: false,
 };
 
 class Ship {
@@ -143,7 +144,7 @@ function updateKeyState(event, enable) {
       ship.angleInc = enable ? 4 : 0;
       break;
     case " ":
-      if (enable) {
+      if (enable && !keyPressStates.shoot) {
         const { x, y } = getNextCoordinatesWithAngle(
           Bullet.radius,
           ship.shipAngle,
@@ -151,6 +152,7 @@ function updateKeyState(event, enable) {
         );
         bullets.push(new Bullet(ctx, ship.x, ship.y, x, y));
       }
+      keyPressStates.shoot = enable;
       break;
   }
 }
