@@ -1,8 +1,8 @@
 const shipImg = new Image();
 shipImg.src = "./assets/ship.png";
 
-const astImg = new Image();
-astImg.src = "./assets/asteroid.png";
+const planetsImg = new Image();
+planetsImg.src = "./assets/planets.png";
 
 const canvas = document.getElementById("game-canvas");
 /** @type {CanvasRenderingContext2D} */
@@ -15,14 +15,14 @@ shipImg.onload = () => {
   refreshScreen();
 };
 
-let asteroids = [];
-astImg.onload = () => {
+let planets = [];
+planetsImg.onload = () => {
   startAsteroids();
 };
 
 function startAsteroids() {
   setInterval(() => {
-    asteroids.push(new Asteroid(ctx));
+    planets.push(new Planet(ctx));
   }, 2000);
 }
 
@@ -33,7 +33,7 @@ const keyPressStates = {
   shoot: false,
 };
 
-class Asteroid {
+class Planet {
   constructor(ctx) {
     this.ctx = ctx;
     if (Math.random() > 0.5) {
@@ -56,6 +56,13 @@ class Asteroid {
     };
     this.imagePositionX = Math.round(Math.random() * 3) * 125;
     this.imagePositionY = Math.round(Math.random() * 3) * 125;
+
+    this.vectorImagePositions = {
+      sx: Math.round(Math.random() * 2) * (planetsImg.width / 3),
+      sy: Math.round(Math.random() * 2) * (planetsImg.height / 3),
+      sWidth: planetsImg.width / 3,
+      sHeight: planetsImg.height / 3,
+    };
   }
 
   update() {
@@ -66,12 +73,16 @@ class Asteroid {
 
     drawImageRot(
       this.ctx,
-      astImg,
+      planetsImg,
       this.x - this.size / 2,
       this.y - this.size / 2,
       this.size,
       this.size,
-      this.asteroidAngle
+      this.asteroidAngle,
+      this.vectorImagePositions.sx,
+      this.vectorImagePositions.sy,
+      this.vectorImagePositions.sWidth,
+      this.vectorImagePositions.sHeight
     );
   }
 }
@@ -169,14 +180,36 @@ class Bullet {
   }
 }
 
-function drawImageRot(ctx, img, x, y, width, height, deg) {
+function drawImageRot(
+  ctx,
+  img,
+  x,
+  y,
+  width,
+  height,
+  deg,
+  sx = 0,
+  sy = 0,
+  sWidth,
+  sHeight
+) {
   ctx.save();
 
   const rad = (deg * Math.PI) / 180;
 
   ctx.translate(x + width / 2, y + height / 2);
   ctx.rotate(rad);
-  ctx.drawImage(img, (width / 2) * -1, (height / 2) * -1, width, height);
+  ctx.drawImage(
+    img,
+    sx,
+    sy,
+    sWidth || img.width,
+    sHeight || img.height,
+    (width / 2) * -1,
+    (height / 2) * -1,
+    width,
+    height
+  );
 
   ctx.restore();
 }
@@ -255,15 +288,15 @@ function refreshScreen() {
     }
 
     if (bullets[i]) {
-      for (let ai = 0; ai < asteroids.length; ai++) {
-        if (bullets[i] && asteroids[ai]) {
+      for (let ai = 0; ai < planets.length; ai++) {
+        if (bullets[i] && planets[ai]) {
           const dist = Math.hypot(
-            bullets[i].x - asteroids[ai].x,
-            bullets[i].y - asteroids[ai].y
+            bullets[i].x - planets[ai].x,
+            bullets[i].y - planets[ai].y
           );
 
-          if (dist - Bullet.radius - asteroids[ai].size / 2 < 1) {
-            asteroids.splice(ai, 1);
+          if (dist - Bullet.radius - planets[ai].size / 2 < 1) {
+            planets.splice(ai, 1);
             bullets.splice(i, 1);
             ai--;
             i--;
@@ -273,21 +306,21 @@ function refreshScreen() {
     }
   }
 
-  for (let i = 0; i < asteroids.length; i++) {
-    asteroids[i].update();
+  for (let i = 0; i < planets.length; i++) {
+    planets[i].update();
 
-    const dist = Math.hypot(ship.x - asteroids[i].x, ship.y - asteroids[i].y);
+    const dist = Math.hypot(ship.x - planets[i].x, ship.y - planets[i].y);
 
-    if (dist - Ship.size / 2 - asteroids[i].size / 2 < 1) {
+    if (dist - Ship.size / 2 - planets[i].size / 2 < 1) {
       cancelAnimationFrame(animationId);
     }
     if (
-      asteroids[i].x + asteroids[i].size / 2 < 0 ||
-      asteroids[i].x - asteroids[i].size / 2 > window.innerWidth ||
-      asteroids[i].y + asteroids[i].size / 2 < 0 ||
-      asteroids[i].y - asteroids[i].size / 2 > window.innerHeight
+      planets[i].x + planets[i].size / 2 < 0 ||
+      planets[i].x - planets[i].size / 2 > window.innerWidth ||
+      planets[i].y + planets[i].size / 2 < 0 ||
+      planets[i].y - planets[i].size / 2 > window.innerHeight
     ) {
-      asteroids.splice(i, 1);
+      planets.splice(i, 1);
       i--;
     }
   }
