@@ -57,9 +57,12 @@ class Planet {
     this.imagePositionX = Math.round(Math.random() * 3) * 125;
     this.imagePositionY = Math.round(Math.random() * 3) * 125;
 
+    const matrixX = Math.round(Math.random() * 2);
+    const matrixY = Math.round(Math.random() * 2);
+
     this.vectorImagePositions = {
-      sx: Math.round(Math.random() * 2) * (planetsImg.width / 3),
-      sy: Math.round(Math.random() * 2) * (planetsImg.height / 3),
+      sx: matrixX * (planetsImg.width / 3),
+      sy: matrixY * (planetsImg.height / 3),
       sWidth: planetsImg.width / 3,
       sHeight: planetsImg.height / 3,
     };
@@ -180,6 +183,53 @@ class Bullet {
   }
 }
 
+class BlastParticle {
+  static friction = 0.99;
+  constructor(ctx, x, y, radius, velocity, img, sx, sy, sWidth, sHeight) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.img = img;
+    this.velocity = velocity;
+    this.alpha = 1;
+    this.ctx = ctx;
+    this.sx = sx;
+    this.sy = sy;
+    this.sWidth = sWidth;
+    this.sHeight = sHeight;
+  }
+
+  draw() {
+    this.ctx.save();
+    this.ctx.globalAlpha = this.alpha;
+
+    drawImageRot(
+      this.ctx,
+      this.img,
+      this.x,
+      this.y,
+      this.radius * 2,
+      this.radius * 2,
+      0,
+      this.sx,
+      this.sy,
+      this.sWidth,
+      this.sHeight
+    );
+
+    this.ctx.restore();
+  }
+
+  update() {
+    this.draw();
+    this.velocity.x *= BlastParticle.friction;
+    this.velocity.y *= BlastParticle.friction;
+    this.x = this.x + this.velocity.x;
+    this.y = this.y + this.velocity.y;
+    this.alpha -= 0.01;
+  }
+}
+
 function drawImageRot(
   ctx,
   img,
@@ -241,6 +291,8 @@ window.addEventListener("keyup", (event) => {
 });
 
 const bullets = [];
+const blastParticles = [];
+
 function updateKeyState(event, enable) {
   switch (event.key) {
     case "ArrowUp":
@@ -274,9 +326,18 @@ function refreshScreen() {
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   ship.update();
 
+  blastParticles.forEach((particle, particleIndex) => {
+    if (particle.alpha <= 0) {
+      blastParticles.splice(particleIndex, 1);
+    } else {
+      particle.update();
+    }
+  });
+
   for (let i = 0; i < bullets.length; i++) {
     bullets[i].update();
 
+    // remove bullet going out of window
     if (
       bullets[i].x < 0 ||
       bullets[i].x > window.innerWidth ||
@@ -288,17 +349,38 @@ function refreshScreen() {
     }
 
     if (bullets[i]) {
-      for (let ai = 0; ai < planets.length; ai++) {
-        if (bullets[i] && planets[ai]) {
+      for (let pi = 0; pi < planets.length; pi++) {
+        if (bullets[i] && planets[pi]) {
           const dist = Math.hypot(
-            bullets[i].x - planets[ai].x,
-            bullets[i].y - planets[ai].y
+            bullets[i].x - planets[pi].x,
+            bullets[i].y - planets[pi].y
           );
 
-          if (dist - Bullet.radius - planets[ai].size / 2 < 1) {
-            planets.splice(ai, 1);
+          // bullet hits planet
+          if (dist - Bullet.radius - planets[pi].size / 2 < 1) {
+            for (let bpi = 0; bpi < planets[pi].size; bpi++) {
+              blastParticles.push(
+                new BlastParticle(
+                  ctx,
+                  bullets[i].x,
+                  bullets[i].y,
+                  Math.random() * 2,
+                  {
+                    x: (Math.random() - 0.5) * (Math.random() * 8),
+                    y: (Math.random() - 0.5) * (Math.random() * 8),
+                  },
+                  planetsImg,
+                  planets[pi].vectorImagePositions.sx,
+                  planets[pi].vectorImagePositions.sy,
+                  planets[pi].vectorImagePositions.sWidth,
+                  planets[pi].vectorImagePositions.sHeight
+                )
+              );
+            }
+
+            planets.splice(pi, 1);
             bullets.splice(i, 1);
-            ai--;
+            pi--;
             i--;
           }
         }
@@ -311,9 +393,12 @@ function refreshScreen() {
 
     const dist = Math.hypot(ship.x - planets[i].x, ship.y - planets[i].y);
 
+    // ship touched to planet
     if (dist - Ship.size / 2 - planets[i].size / 2 < 1) {
       cancelAnimationFrame(animationId);
     }
+
+    // remove planets out of screen
     if (
       planets[i].x + planets[i].size / 2 < 0 ||
       planets[i].x - planets[i].size / 2 > window.innerWidth ||
