@@ -6,10 +6,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Space Shooter</title>
     <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
   </head>
   <body>
     <section id="score">Score: 0</section>
     <canvas id="game-canvas"></canvas>
-    <script src="script.js"></script>
+
+    <dialog id="gameOverDialog">
+      <div id="final-score">Your Score:</div>
+      <button
+        class="primary-cta"
+        onclick="restartGame()"
+        onkeyup="event.preventDefault()"
+      >
+        Restart Game
+      </button>
+    </dialog>
+
+    <dialog id="initialInstructionDialog">
+      <h2>Instructions</h2>
+      <div style="padding: 0 20px">
+        <h4>Controls</h4>
+        <ul style="padding: 10px 40px">
+          <li><b>Up Arrow:</b> To move ship forward</li>
+          <li><b>Right Arrow:</b> To turn ship to right</li>
+          <li><b>Left Arrow:</b> To turn ship to left</li>
+          <li><b>Space:</b> To shoot bullets</li>
+        </ul>
+        <h4>Score Distribution</h4>
+        <ul style="padding: 10px 40px">
+          <li><b>Large Planet:</b> 10</li>
+          <li><b>Medium Planet:</b> 20</li>
+          <li><b>Small Planet:</b> 30</li>
+        </ul>
+      </div>
+      <button class="primary-cta" onclick="closeInstruction()">Ok</button>
+    </dialog>
   </body>
 </html>

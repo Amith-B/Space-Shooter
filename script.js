@@ -9,6 +9,14 @@ const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 
 const scoreElement = document.getElementById("score");
+const gameOverDialog = document.getElementById("gameOverDialog");
+const initialInstructionDialog = document.getElementById(
+  "initialInstructionDialog"
+);
+
+initialInstructionDialog.showModal();
+
+const finalScore = document.getElementById("final-score");
 
 let score = 0;
 
@@ -20,14 +28,31 @@ shipImg.onload = () => {
 };
 
 let planets = [];
+
+let bullets = [];
+let blastParticles = [];
+
+let planetsLoaded = false;
+let instructionClosed = false;
+
 planetsImg.onload = () => {
-  startAsteroids();
+  planetsLoaded = true;
+  startPlanetMovement();
 };
 
-function startAsteroids() {
-  setInterval(() => {
-    planets.push(new Planet(ctx));
-  }, 2000);
+let timmer;
+function startPlanetMovement() {
+  if (planetsLoaded && instructionClosed) {
+    timmer = setInterval(() => {
+      planets.push(new Planet(ctx));
+    }, 2000);
+  }
+}
+
+function closeInstruction() {
+  instructionClosed = true;
+  initialInstructionDialog.open = false;
+  startPlanetMovement();
 }
 
 const keyPressStates = {
@@ -36,6 +61,25 @@ const keyPressStates = {
   right: false,
   shoot: false,
 };
+
+function restartGame() {
+  gameOverDialog.open = false;
+
+  score = 0;
+  scoreElement.innerHTML = `Score: ${score}`;
+  keyPressStates.up = false;
+  keyPressStates.left = false;
+  keyPressStates.right = false;
+  keyPressStates.shoot = false;
+
+  planets = [];
+  bullets = [];
+  blastParticles = [];
+  ship.reset(canvas.width / 2, canvas.height / 2);
+  startPlanetMovement();
+
+  refreshScreen();
+}
 
 class Planet {
   constructor(ctx) {
@@ -98,6 +142,19 @@ class Ship {
   static size = 40;
   constructor(ctx, x, y) {
     this.ctx = ctx;
+    this.x = x;
+    this.y = y;
+    this.velocity = {
+      x: 0,
+      y: 0,
+    };
+    this.speed = 0;
+    this.angleInc = 0;
+    this.shipAngle = 0;
+    this.movementAngle = 0;
+  }
+
+  reset(x, y) {
     this.x = x;
     this.y = y;
     this.velocity = {
@@ -294,9 +351,6 @@ window.addEventListener("keyup", (event) => {
   updateKeyState(event, false);
 });
 
-const bullets = [];
-const blastParticles = [];
-
 function updateKeyState(event, enable) {
   switch (event.key) {
     case "ArrowUp":
@@ -364,6 +418,7 @@ function refreshScreen() {
           if (dist - Bullet.radius - planets[pi].size / 2 < 1) {
             // score distribution based on planet size
             // smaller the planet higher the score
+
             if (planets[pi].size > 50) {
               score += 10;
             } else if (planets[pi].size > 40) {
@@ -410,6 +465,14 @@ function refreshScreen() {
     // ship touched to planet
     if (dist - Ship.size / 2 - planets[i].size / 2 < 1) {
       cancelAnimationFrame(animationId);
+      if (timmer) {
+        clearTimeout(timmer);
+      }
+      if (typeof gameOverDialog.showModal === "function") {
+        finalScore.innerHTML = `Your Score: ${score}`;
+        gameOverDialog.showModal();
+      }
+      return;
     }
 
     // remove planets out of screen
