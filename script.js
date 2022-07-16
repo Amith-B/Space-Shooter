@@ -8,6 +8,10 @@ const canvas = document.getElementById("game-canvas");
 /** @type {CanvasRenderingContext2D} */
 const ctx = canvas.getContext("2d");
 
+const scoreElement = document.getElementById("score");
+
+let score = 0;
+
 let ship;
 shipImg.onload = () => {
   setCanvasSize();
@@ -358,13 +362,23 @@ function refreshScreen() {
 
           // bullet hits planet
           if (dist - Bullet.radius - planets[pi].size / 2 < 1) {
+            // score distribution based on planet size
+            // smaller the planet higher the score
+            if (planets[pi].size > 50) {
+              score += 10;
+            } else if (planets[pi].size > 40) {
+              score += 20;
+            } else if (planets[pi].size > 30) {
+              score += 30;
+            }
+            scoreElement.innerHTML = `Score: ${score}`;
             for (let bpi = 0; bpi < planets[pi].size; bpi++) {
               blastParticles.push(
                 new BlastParticle(
                   ctx,
                   bullets[i].x,
                   bullets[i].y,
-                  Math.random() * 2,
+                  Math.random() * 5,
                   {
                     x: (Math.random() - 0.5) * (Math.random() * 8),
                     y: (Math.random() - 0.5) * (Math.random() * 8),
