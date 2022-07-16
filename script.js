@@ -20,6 +20,8 @@ initialInstructionDialog.showModal();
 const finalScore = document.getElementById("final-score");
 
 let score = 0;
+let bulletsShot = 0;
+let planetsBlasted = 0;
 
 let ship;
 shipImg.onload = () => {
@@ -67,6 +69,8 @@ function restartGame() {
   gameOverDialog.open = false;
 
   score = 0;
+  bulletsShot = 0;
+  planetsBlasted = 0;
   scoreElement.innerHTML = `Score: ${score}`;
   keyPressStates.up = false;
   keyPressStates.left = false;
@@ -377,6 +381,7 @@ function updateKeyState(event, enable) {
           ship.speed + 2.5
         );
         bullets.push(new Bullet(ctx, ship.x, ship.y, x, y));
+        bulletsShot += 1;
       }
       keyPressStates.shoot = enable;
       break;
@@ -459,6 +464,8 @@ function refreshScreen() {
               );
             }
 
+            planetsBlasted += 1;
+
             planets.splice(pi, 1);
             bullets.splice(i, 1);
             pi--;
@@ -494,7 +501,11 @@ function refreshScreen() {
         clearTimeout(timmer);
       }
       if (typeof gameOverDialog.showModal === "function") {
-        finalScore.innerHTML = `Your Score: ${score}`;
+        finalScore.innerHTML = `
+          Your Score: ${score}<br/>
+          Bullets Shot: ${bulletsShot}<br/>
+          Planets Blasted: ${planetsBlasted}
+        `;
         gameOverDialog.showModal();
       }
       return;
