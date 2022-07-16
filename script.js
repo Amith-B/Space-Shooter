@@ -1,5 +1,5 @@
 const shipImg = new Image();
-shipImg.src = "./assets/ship.png";
+shipImg.src = "./assets/ships.png";
 
 const planetsImg = new Image();
 planetsImg.src = "./assets/planets.png";
@@ -10,6 +10,7 @@ const ctx = canvas.getContext("2d");
 
 const scoreElement = document.getElementById("score");
 const gameOverDialog = document.getElementById("gameOverDialog");
+const shipList = document.getElementById("ship-list");
 const initialInstructionDialog = document.getElementById(
   "initialInstructionDialog"
 );
@@ -81,6 +82,17 @@ function restartGame() {
   refreshScreen();
 }
 
+function selectShip(shipId) {
+  Array.from(shipList.children).forEach((shipItem, i) => {
+    shipItem.classList.toggle;
+    if (i === shipId) {
+      shipItem.classList.add("active");
+      Ship.shipNumber = shipId;
+    } else {
+      shipItem.classList.remove("active");
+    }
+  });
+}
 class Planet {
   constructor(ctx) {
     this.ctx = ctx;
@@ -143,7 +155,8 @@ class Planet {
 }
 
 class Ship {
-  static size = 40;
+  static size = 50;
+  static shipNumber = 0;
   constructor(ctx, x, y) {
     this.ctx = ctx;
     this.x = x;
@@ -206,26 +219,12 @@ class Ship {
       this.y - Ship.size / 2,
       Ship.size,
       Ship.size,
-      this.shipAngle
+      this.shipAngle,
+      Ship.shipNumber * (shipImg.width / 4),
+      0,
+      shipImg.width / 4,
+      shipImg.height
     );
-  }
-
-  drawImageRot(shipImg, x, y, width, height, deg) {
-    this.ctx.save();
-
-    const rad = (deg * Math.PI) / 180;
-
-    this.ctx.translate(x + width / 2, y + height / 2);
-    this.ctx.rotate(rad);
-    this.ctx.drawImage(
-      shipImg,
-      (width / 2) * -1,
-      (height / 2) * -1,
-      width,
-      height
-    );
-
-    this.ctx.restore();
   }
 }
 
@@ -375,7 +374,7 @@ function updateKeyState(event, enable) {
         const { x, y } = getNextCoordinatesWithAngle(
           Bullet.radius,
           ship.shipAngle,
-          ship.speed + 2
+          ship.speed + 2.5
         );
         bullets.push(new Bullet(ctx, ship.x, ship.y, x, y));
       }
