@@ -84,6 +84,8 @@ function restartGame() {
 class Planet {
   constructor(ctx) {
     this.ctx = ctx;
+
+    // to generate random x and y position for a planet
     if (Math.random() > 0.5) {
       this.x = Math.random() > 0.5 ? window.innerWidth : 0;
       this.y = Math.round(Math.random() * window.innerHeight);
@@ -92,6 +94,7 @@ class Planet {
       this.y = Math.random() > 0.5 ? window.innerHeight : 0;
     }
 
+    // angle from initial planet position to the ships position
     const angle = Math.atan2(ship.y - this.y, ship.x - this.x);
 
     this.size = Math.round(Math.random() * 60 + 30);
@@ -108,6 +111,7 @@ class Planet {
     const matrixX = Math.round(Math.random() * 2);
     const matrixY = Math.round(Math.random() * 2);
 
+    // random planet to be choosed from vector image
     this.vectorImagePositions = {
       sx: matrixX * (planetsImg.width / 3),
       sy: matrixY * (planetsImg.height / 3),
@@ -154,6 +158,7 @@ class Ship {
     this.movementAngle = 0;
   }
 
+  // reset the ship position to center
   reset(x, y) {
     this.x = x;
     this.y = y;
@@ -239,7 +244,10 @@ class Bullet {
     this.y += this.vy;
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, Bullet.radius, 0, 2 * Math.PI, false);
-    this.ctx.fillStyle = "#34a9de";
+    this.ctx.fillStyle = "orange";
+    this.ctx.strokeStyle = "#ff00008f"; //"#34a9de";
+    this.ctx.lineWidth = "2";
+    this.ctx.stroke();
     this.ctx.fill();
   }
 }
@@ -379,9 +387,11 @@ function updateKeyState(event, enable) {
 let animationId;
 function refreshScreen() {
   animationId = requestAnimationFrame(refreshScreen);
+  const canvasWidth = canvas.width;
+  const canvasHeight = canvas.height;
 
   ctx.fillStyle = "rgba(0,0,0,0.2)";
-  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   ship.update();
 
   blastParticles.forEach((particle, particleIndex) => {
@@ -398,9 +408,9 @@ function refreshScreen() {
     // remove bullet going out of window
     if (
       bullets[i].x < 0 ||
-      bullets[i].x > window.innerWidth ||
+      bullets[i].x > canvasWidth ||
       bullets[i].y < 0 ||
-      bullets[i].y > window.innerHeight
+      bullets[i].y > canvasHeight
     ) {
       bullets.splice(i, 1);
       i--;
@@ -409,6 +419,7 @@ function refreshScreen() {
     if (bullets[i]) {
       for (let pi = 0; pi < planets.length; pi++) {
         if (bullets[i] && planets[pi]) {
+          // distance between bullets and planet
           const dist = Math.hypot(
             bullets[i].x - planets[pi].x,
             bullets[i].y - planets[pi].y
@@ -418,7 +429,6 @@ function refreshScreen() {
           if (dist - Bullet.radius - planets[pi].size / 2 < 1) {
             // score distribution based on planet size
             // smaller the planet higher the score
-
             if (planets[pi].size > 50) {
               score += 10;
             } else if (planets[pi].size > 40) {
@@ -426,8 +436,11 @@ function refreshScreen() {
             } else if (planets[pi].size > 30) {
               score += 30;
             }
+
+            // update score
             scoreElement.innerHTML = `Score: ${score}`;
             for (let bpi = 0; bpi < planets[pi].size; bpi++) {
+              // create planet blast effect
               blastParticles.push(
                 new BlastParticle(
                   ctx,
@@ -460,10 +473,23 @@ function refreshScreen() {
   for (let i = 0; i < planets.length; i++) {
     planets[i].update();
 
+    // distance between ship and planet
     const dist = Math.hypot(ship.x - planets[i].x, ship.y - planets[i].y);
 
+    let shipOutOfScreen = false;
+
+    // to end game if ship is out of screen
+    if (
+      ship.x + Ship.size / 2 < 0 ||
+      ship.x - Ship.size / 2 > canvasWidth ||
+      ship.y + Ship.size / 2 < 0 ||
+      ship.y - Ship.size / 2 > canvasHeight
+    ) {
+      shipOutOfScreen = true;
+    }
+
     // ship touched to planet
-    if (dist - Ship.size / 2 - planets[i].size / 2 < 1) {
+    if (shipOutOfScreen || dist - Ship.size / 2 - planets[i].size / 2 < 1) {
       cancelAnimationFrame(animationId);
       if (timmer) {
         clearTimeout(timmer);
@@ -478,9 +504,9 @@ function refreshScreen() {
     // remove planets out of screen
     if (
       planets[i].x + planets[i].size / 2 < 0 ||
-      planets[i].x - planets[i].size / 2 > window.innerWidth ||
+      planets[i].x - planets[i].size / 2 > canvasWidth ||
       planets[i].y + planets[i].size / 2 < 0 ||
-      planets[i].y - planets[i].size / 2 > window.innerHeight
+      planets[i].y - planets[i].size / 2 > canvasHeight
     ) {
       planets.splice(i, 1);
       i--;
