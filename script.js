@@ -258,7 +258,7 @@ class Bullet {
 }
 
 class BlastParticle {
-  static friction = 0.99;
+  static friction = 0.999;
   constructor(ctx, x, y, radius, velocity, img, sx, sy, sWidth, sHeight) {
     this.x = x;
     this.y = y;
