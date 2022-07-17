@@ -10,7 +10,7 @@ const ctx = canvas.getContext("2d");
 
 const scoreElement = document.getElementById("score");
 const gameOverDialog = document.getElementById("gameOverDialog");
-const shipList = document.getElementById("ship-list");
+const shipList = document.getElementsByClassName("ship-list");
 const initialInstructionDialog = document.getElementById(
   "initialInstructionDialog"
 );
@@ -87,14 +87,16 @@ function restartGame() {
 }
 
 function selectShip(shipId) {
-  Array.from(shipList.children).forEach((shipItem, i) => {
-    shipItem.classList.toggle;
-    if (i === shipId) {
-      shipItem.classList.add("active");
-      Ship.shipNumber = shipId;
-    } else {
-      shipItem.classList.remove("active");
-    }
+  Array.from(shipList).forEach((shiplst) => {
+    Array.from(shiplst.children).forEach((shipItem, i) => {
+      shipItem.classList.toggle;
+      if (i === shipId) {
+        shipItem.classList.add("active");
+        Ship.shipNumber = shipId;
+      } else {
+        shipItem.classList.remove("active");
+      }
+    });
   });
 }
 class Planet {

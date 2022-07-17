@@ -16,6 +16,14 @@
 
     <dialog id="gameOverDialog">
       <div id="final-score">Your Score:</div>
+      <hr />
+      <h2>Change Ship?</h2>
+      <ul class="ship-list">
+        <li class="ship-img active" onclick="selectShip(0)"></li>
+        <li class="ship-img" onclick="selectShip(1)"></li>
+        <li class="ship-img" onclick="selectShip(2)"></li>
+        <li class="ship-img" onclick="selectShip(3)"></li>
+      </ul>
       <button
         class="primary-cta"
         onclick="restartGame()"
@@ -42,7 +50,7 @@
           <li><b>Small Planet:</b> 30</li>
         </ul>
         <h4>Choose Ship</h4>
-        <ul id="ship-list">
+        <ul class="ship-list">
           <li class="ship-img active" onclick="selectShip(0)"></li>
           <li class="ship-img" onclick="selectShip(1)"></li>
           <li class="ship-img" onclick="selectShip(2)"></li>
