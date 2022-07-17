@@ -341,15 +341,8 @@ function drawImageRot(
 ctx.drawImage;
 
 function getNextCoordinatesWithAngle(radius, degree, velocity = 1) {
-  let deg = 0;
+  const deg = 180 - degree;
 
-  if (degree < 180) {
-    deg = 180 - degree;
-  }
-
-  if (degree > 180) {
-    deg = 360 - (degree - 180);
-  }
   return {
     x: radius * Math.sin((Math.PI * 2 * deg) / 360) * velocity,
     y: radius * Math.cos((Math.PI * 2 * deg) / 360) * velocity,
