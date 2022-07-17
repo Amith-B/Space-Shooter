@@ -228,7 +228,7 @@ class Ship {
       this.shipAngle,
       Ship.shipNumber * (shipImg.width / 4),
       0,
-      shipImg.width / 4,
+      shipImg.width / 4 - 6,
       shipImg.height
     );
   }
