@@ -22,13 +22,7 @@ const finalScore = document.getElementById("final-score");
 let score = 0;
 let bulletsShot = 0;
 let planetsBlasted = 0;
-
-let ship;
-shipImg.onload = () => {
-  setCanvasSize();
-  ship = new Ship(ctx, canvas.width / 2, canvas.height / 2);
-  refreshScreen();
-};
+let isTouch = false;
 
 let planets = [];
 
@@ -36,7 +30,16 @@ let bullets = [];
 let blastParticles = [];
 
 let planetsLoaded = false;
+let shipLoaded = false;
 let instructionClosed = false;
+
+let ship;
+shipImg.onload = () => {
+  setCanvasSize();
+  ship = new Ship(ctx, canvas.width / 2, canvas.height / 2);
+  shipLoaded = true;
+  startRefresh();
+};
 
 planetsImg.onload = () => {
   planetsLoaded = true;
@@ -45,6 +48,9 @@ planetsImg.onload = () => {
 
 let timmer;
 function startPlanetMovement() {
+  if (timmer) {
+    clearInterval(timmer);
+  }
   if (planetsLoaded && instructionClosed) {
     timmer = setInterval(() => {
       planets.push(new Planet(ctx));
@@ -52,10 +58,31 @@ function startPlanetMovement() {
   }
 }
 
+let shootTimmer;
+// autoshoot for touch devices where keyboard interaction not needed
+function startAutoShoot() {
+  if (shootTimmer) {
+    clearInterval(shootTimmer);
+  }
+  if (shipLoaded && instructionClosed && isTouch) {
+    shootTimmer = setInterval(() => {
+      shoot();
+    }, 200);
+  }
+}
+
 function closeInstruction() {
   instructionClosed = true;
   initialInstructionDialog.open = false;
+  startRefresh();
   startPlanetMovement();
+}
+
+function startRefresh() {
+  if (instructionClosed && shipLoaded) {
+    refreshScreen();
+    startAutoShoot();
+  }
 }
 
 const keyPressStates = {
@@ -82,10 +109,11 @@ function restartGame() {
   blastParticles = [];
   ship.reset(canvas.width / 2, canvas.height / 2);
   startPlanetMovement();
-
+  startAutoShoot();
   refreshScreen();
 }
 
+// set the ship number based on selection
 function selectShip(shipId) {
   Array.from(shipList).forEach((shiplst) => {
     Array.from(shiplst.children).forEach((shipItem, i) => {
@@ -99,6 +127,18 @@ function selectShip(shipId) {
     });
   });
 }
+
+// set start position of bullet to ships position
+function shoot() {
+  const { x, y } = getNextCoordinatesWithAngle(
+    Bullet.radius,
+    ship.shipAngle,
+    ship.speed + 2.5
+  );
+  bullets.push(new Bullet(ctx, ship.x, ship.y, x, y));
+  bulletsShot += 1;
+}
+
 class Planet {
   constructor(ctx) {
     this.ctx = ctx;
@@ -192,12 +232,20 @@ class Ship {
   }
 
   update() {
+    if (keyPressStates.right) {
+      ship.angleInc = 4;
+    } else if (keyPressStates.left) {
+      ship.angleInc = -4;
+    } else {
+      ship.angleInc = 0;
+    }
+
     this.shipAngle += this.angleInc;
     if (Math.abs(this.shipAngle) === 360) {
       this.shipAngle = 0;
     }
 
-    if (keyPressStates.up) {
+    if (keyPressStates.up || isTouch) {
       if (this.speed < 0.15) {
         this.speed += 0.003;
       }
@@ -357,26 +405,39 @@ window.addEventListener("keyup", (event) => {
   updateKeyState(event, false);
 });
 
+// support for mobile devices
+window.addEventListener("touchstart", (event) => {
+  const { pageX } = event.changedTouches[0];
+  if (pageX > canvas.width / 2) {
+    keyPressStates.right = true;
+    keyPressStates.left = false;
+    return;
+  }
+
+  keyPressStates.right = false;
+  keyPressStates.left = true;
+});
+
+// support for mobile devices
+window.addEventListener("touchend", () => {
+  keyPressStates.right = false;
+  keyPressStates.left = false;
+});
+
 function updateKeyState(event, enable) {
   switch (event.key) {
     case "ArrowUp":
       keyPressStates.up = enable;
       break;
     case "ArrowLeft":
-      ship.angleInc = enable ? -4 : 0;
+      keyPressStates.left = enable;
       break;
     case "ArrowRight":
-      ship.angleInc = enable ? 4 : 0;
+      keyPressStates.right = enable;
       break;
     case " ":
       if (enable && !keyPressStates.shoot) {
-        const { x, y } = getNextCoordinatesWithAngle(
-          Bullet.radius,
-          ship.shipAngle,
-          ship.speed + 2.5
-        );
-        bullets.push(new Bullet(ctx, ship.x, ship.y, x, y));
-        bulletsShot += 1;
+        shoot();
       }
       keyPressStates.shoot = enable;
       break;
@@ -493,7 +554,10 @@ function refreshScreen() {
     if (shipOutOfScreen || dist - Ship.size / 2 - planets[i].size / 2 < 1) {
       cancelAnimationFrame(animationId);
       if (timmer) {
-        clearTimeout(timmer);
+        clearInterval(timmer);
+      }
+      if (shootTimmer) {
+        clearInterval(shootTimmer);
       }
       if (typeof gameOverDialog.showModal === "function") {
         finalScore.innerHTML = `
@@ -527,3 +591,13 @@ function setCanvasSize() {
 window.addEventListener("resize", () => {
   setCanvasSize();
 });
+
+// support for mobile devices
+function checkDeviceType(touchDevice) {
+  if (touchDevice.matches) {
+    isTouch = true;
+  }
+}
+
+const touchDeviceMatch = window.matchMedia("(pointer: coarse)");
+checkDeviceType(touchDeviceMatch);

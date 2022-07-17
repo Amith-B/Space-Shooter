@@ -33,8 +33,6 @@ canvas {
 dialog {
   border: 0;
   border-radius: 20px;
-  background-color: #ffffff7a;
-  backdrop-filter: blur(4px);
   box-shadow: 0 0 14px 4px #212020;
 }
 
@@ -116,4 +114,18 @@ button:hover {
 .ship-img.active {
   box-shadow: inset 0 0 4px 1px;
   border-radius: 10px;
+}
+
+#touch-control-instructions {
+  display: none;
+}
+
+/* media query for touch devices to hide keyboard instruction */
+@media (pointer: coarse) {
+  #mouse-control-instructions {
+    display: none;
+  }
+  #touch-control-instructions {
+    display: block;
+  }
 }
